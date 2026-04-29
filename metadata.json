@@ -1,0 +1,8 @@
+{
+  "name": "Control de Inventario y Ventas",
+  "description": "Herramienta responsiva para administrar productos, stock y realizar ventas, diseñada para Android y Windows.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}
