@@ -10,7 +10,7 @@ METADATA_JSON = "metadata.json"
 class VersionUpdater:
     def __init__(self, root):
         self.root = root
-        self.root.title("📱 Version Updater - INVENTARIO")
+        self.root.title("📱 Version Updater - Gonzalbe")
         self.root.geometry("400x300")
         self.root.configure(bg="#0f172a")
         self._build_ui()

@@ -3,6 +3,8 @@ import { Product, Sale } from "../types";
 import { FileJson, Upload, Download, Wifi, Smartphone, Monitor, CheckCircle, AlertCircle, Scan, RefreshCw } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Peer, DataConnection } from "peerjs";
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 import BarcodeScannerModal from "./BarcodeScannerModal";
 
 interface SyncProps {
@@ -19,16 +21,45 @@ export default function SyncView({ products, sales, setProducts, setSales }: Syn
   // File Sync
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExportFile = () => {
+  const handleExportFile = async () => {
+    const fileName = `VentaControl_Backup_${new Date().toISOString().split("T")[0]}.json`;
     const data = JSON.stringify({ products, sales }, null, 2);
-    const blob = new Blob([data], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `VentaControl_Backup_${new Date().toISOString().split("T")[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setStatusMsg({ type: "success", text: "Archivo exportado exitosamente." });
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Filesystem.writeFile({
+          path: `Download/${fileName}`,
+          data: data,
+          directory: Directory.ExternalStorage,
+          encoding: Encoding.UTF8,
+        });
+        setStatusMsg({ type: "success", text: `Archivo guardado en Descargas: ${fileName}` });
+      } catch (err) {
+        console.error("Error al guardar:", err);
+        // Fallback to Documents if Download fails
+        try {
+          await Filesystem.writeFile({
+            path: fileName,
+            data: data,
+            directory: Directory.Documents,
+            encoding: Encoding.UTF8,
+          });
+          setStatusMsg({ type: "success", text: `Archivo guardado en Documentos: ${fileName}` });
+        } catch (e2) {
+          console.error("Error fallback documento:", e2);
+          setStatusMsg({ type: "error", text: "Error al guardar el archivo. Verifica los permisos de almacenamiento." });
+        }
+      }
+    } else {
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatusMsg({ type: "success", text: "Archivo exportado exitosamente." });
+    }
   };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,7 +256,7 @@ export default function SyncView({ products, sales, setProducts, setSales }: Syn
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4 sm:gap-6 relative max-w-full">
+            <div className="flex flex-col md:flex-row gap-4 sm:gap-6 relative w-full">
               
               <div className="hidden md:flex absolute inset-y-0 left-1/2 -ml-[1px] w-[2px] bg-slate-100 flex-col justify-center items-center">
                  <div className="bg-white border border-slate-200 p-2 rounded-full absolute">
@@ -234,7 +265,7 @@ export default function SyncView({ products, sales, setProducts, setSales }: Syn
               </div>
 
               {/* Host Section */}
-              <div className="border border-slate-200 p-6 sm:p-7 rounded-xl flex flex-col items-center text-center bg-white shadow-sm">
+              <div className="flex-1 min-w-0 border border-slate-200 p-4 sm:p-7 rounded-xl flex flex-col items-center text-center bg-white shadow-sm">
                 <div className="w-12 h-12 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-full flex items-center justify-center mb-4 shrink-0">
                   <Monitor size={24} />
                 </div>
@@ -247,7 +278,7 @@ export default function SyncView({ products, sales, setProducts, setSales }: Syn
                     </div>
                     <div className="bg-slate-50 w-full px-2 sm:px-4 py-3 rounded-xl border border-slate-200 overflow-hidden flex flex-col items-center justify-center shrink-0">
                       <p className="text-[10px] sm:text-xs text-slate-500 uppercase font-bold tracking-widest mb-1 sm:mb-2">Código de Conexión</p>
-                      <p className="text-2xl sm:text-3xl font-mono font-bold text-indigo-700 tracking-[0.15em] sm:tracking-[0.2em] break-all text-center">{peerId}</p>
+                      <p className="text-2xl sm:text-3xl font-mono font-bold text-indigo-700 tracking-[0.1em] sm:tracking-[0.2em] break-all text-center">{peerId}</p>
                     </div>
                   </div>
                 ) : (
@@ -259,7 +290,7 @@ export default function SyncView({ products, sales, setProducts, setSales }: Syn
               </div>
 
               {/* Client Section */}
-              <div className="border border-slate-200 p-6 sm:p-7 rounded-xl flex flex-col items-center text-center bg-white shadow-sm">
+              <div className="flex-1 min-w-0 border border-slate-200 p-4 sm:p-7 rounded-xl flex flex-col items-center text-center bg-white shadow-sm">
                 <div className="w-12 h-12 bg-teal-50 text-teal-600 border border-teal-100 rounded-full flex items-center justify-center mb-4 shrink-0">
                   <Smartphone size={24} />
                 </div>

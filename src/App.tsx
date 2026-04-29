@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Product, Sale } from "./types";
-import { LayoutDashboard, Package, ShoppingCart, Menu, X, RefreshCw, FileText, BarChart2 } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Menu, X, RefreshCw, FileText, BarChart2, Coffee } from "lucide-react";
 import DashboardView from "./components/DashboardView";
 import InventoryView from "./components/InventoryView";
 import POSView from "./components/POSView";
@@ -135,7 +135,7 @@ export default function App() {
     <div className="flex bg-slate-50 h-[100dvh] overflow-hidden text-slate-800 font-sans w-full">
       {/* Mobile Header / Nav toggle */}
       <div className="md:hidden flex items-center justify-between bg-blue-700 text-white p-4 fixed top-0 w-full z-20 shadow-md">
-        <div className="font-bold text-lg tracking-tight">SistemaVentas</div>
+        <div className="font-bold text-lg tracking-tight">Gonzalbe</div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -149,9 +149,9 @@ export default function App() {
       `}>
         <div className="hidden md:flex p-6 items-center gap-3 border-b border-slate-200">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-            <Package size={18} />
+            <Coffee size={18} />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">StockFlow</h1>
+          <h1 className="text-xl font-bold tracking-tight">Gonzalbe</h1>
         </div>
         
         <div className="flex flex-col px-4 py-4 space-y-1 mt-4 md:mt-0">

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
-import { X } from "lucide-react";
-import { Camera } from '@capacitor/camera';
+import { X, Camera as CameraIcon } from "lucide-react";
 import { Capacitor } from '@capacitor/core';
+import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
 
 interface BarcodeScannerModalProps {
   onScan: (decodedText: string) => void;
@@ -12,59 +12,62 @@ interface BarcodeScannerModalProps {
 export default function BarcodeScannerModal({ onScan, onClose }: BarcodeScannerModalProps) {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [hasPermission, setHasPermission] = useState<boolean>(!Capacitor.isNativePlatform());
 
   useEffect(() => {
-    const checkPermissions = async () => {
+    const requestPermissionsAndScan = async () => {
       if (Capacitor.isNativePlatform()) {
         try {
-          const status = await Camera.requestPermissions();
+          const status = await BarcodeScanner.requestPermissions();
           if (status.camera === 'granted' || status.camera === 'limited') {
-            setHasPermission(true);
+            // Permission granted, start native scan
+            try {
+              const result = await BarcodeScanner.scan();
+              if (result.barcodes.length > 0) {
+                onScan(result.barcodes[0].displayValue);
+              } else {
+                onClose(); // No barcode was scanned, close modal
+              }
+            } catch (scanErr) {
+              console.error("Error during native scan:", scanErr);
+              onClose(); // Just close if the user canceled the native scanner
+            }
           } else {
-            setError("Permiso de cámara denegado. Puedes usar la opción de subir archivo.");
-            setHasPermission(true); // Still allow it so they can use the file upload if they want
+             setError("Permiso de cámara denegado. No se puede escanear en este dispositivo.");
           }
         } catch (err) {
           console.error("Error pidiendo permiso de cámara:", err);
-          setHasPermission(true);
+          setError("Error al solicitar permiso de cámara.");
         }
       } else {
-        setHasPermission(true);
+        // Initialize the web scanner when the component mounts
+        const scanner = new Html5QrcodeScanner(
+          "reader",
+          { 
+            fps: 10,
+            rememberLastUsedCamera: true,
+            supportedScanTypes: [0, 1] // 0: camera, 1: file
+          },
+          false
+        );
+
+        scannerRef.current = scanner;
+
+        scanner.render(
+          (decodedText) => {
+            // Stop scanning and call onScan completely
+            if (scannerRef.current) {
+              scannerRef.current.clear().catch(console.error);
+            }
+            onScan(decodedText);
+          },
+          (errorMessage) => {
+            // We can ignore continuous scanning errors, as they are mostly "barcode not found"
+          }
+        );
       }
     };
     
-    checkPermissions();
-  }, []);
-
-  useEffect(() => {
-    if (!hasPermission) return;
-
-    // Initialize the scanner when the component mounts
-    const scanner = new Html5QrcodeScanner(
-      "reader",
-      { 
-        fps: 10,
-        rememberLastUsedCamera: true,
-        supportedScanTypes: [0, 1] // 0: camera, 1: file
-      },
-      false
-    );
-
-    scannerRef.current = scanner;
-
-    scanner.render(
-      (decodedText) => {
-        // Stop scanning and call onScan completely
-        if (scannerRef.current) {
-          scannerRef.current.clear().catch(console.error);
-        }
-        onScan(decodedText);
-      },
-      (errorMessage) => {
-        // We can ignore continuous scanning errors, as they are mostly "barcode not found"
-      }
-    );
+    requestPermissionsAndScan();
 
     return () => {
       // Cleanup when component unmounts
@@ -72,7 +75,7 @@ export default function BarcodeScannerModal({ onScan, onClose }: BarcodeScannerM
         scannerRef.current.clear().catch(console.error);
       }
     };
-  }, [onScan, hasPermission]);
+  }, [onScan, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4">
@@ -86,6 +89,11 @@ export default function BarcodeScannerModal({ onScan, onClose }: BarcodeScannerM
         <div className="p-4 flex-1 flex flex-col">
           {error ? (
             <div className="text-red-500 text-center p-4">{error}</div>
+          ) : Capacitor.isNativePlatform() ? (
+            <div className="w-full h-48 flex items-center justify-center bg-slate-100 rounded-lg text-slate-500 flex-col gap-4">
+              <CameraIcon size={48} className="animate-pulse" />
+              <p>Abriendo cámara...</p>
+            </div>
           ) : (
             <div id="reader" className="w-full overflow-hidden rounded-lg"></div>
           )}
