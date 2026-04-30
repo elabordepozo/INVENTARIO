@@ -1,8 +1,18 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
+const fs = require('fs');
+
+let mainWindow;
 
 function createWindow() {
-  const win = new BrowserWindow({
+  // Buscar el archivo index.html en la carpeta dist
+  const distPath = path.join(__dirname, 'dist');
+  const indexPath = path.join(distPath, 'index.html');
+  
+  console.log('Buscando index en:', indexPath);
+  console.log('Existe:', fs.existsSync(indexPath));
+  
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 800,
@@ -10,20 +20,17 @@ function createWindow() {
     title: 'Gonzalbe',
     icon: path.join(__dirname, 'public', 'logo.png'),
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true
+      nodeIntegration: true,
+      contextIsolation: false
     }
   });
 
-  // Cargar la app
-  if (process.env.NODE_ENV === 'development') {
-    win.loadURL('http://localhost:5173');
-    win.webContents.openDevTools();
-  } else {
-    win.loadFile(path.join(__dirname, 'dist', 'index.html'));
-  }
+  // Cargar el archivo local
+  mainWindow.loadFile(indexPath).catch(err => {
+    console.error('Error cargando archivo:', err);
+  });
 
-  // Crear menú
+  // Menú
   const template = [
     {
       label: 'Archivo',
@@ -68,8 +75,8 @@ function createWindow() {
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 
-  win.on('closed', () => {
-    win = null;
+  mainWindow.on('closed', () => {
+    mainWindow = null;
   });
 }
 

@@ -7,11 +7,14 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
+    "build:github": "VITE_BASE_URL=/IINVENTARIO/ vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "electron": "electron .",
-    "electron:build": "vite build && electron ."
+    "electron": "vite build && electron .",
+    "electron:dev": "vite build && electron . --remote-debugging-port=9222",
+    "android": "npm run build && npx cap sync android && npx cap run android",
+    "android:build": "npm run build && npx cap sync android && npx cap copy android"
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^8.0.1",
@@ -41,6 +44,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.21",
+    "electron": "^41.3.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
